@@ -35,21 +35,21 @@ public class MusicView : UIView {
     public func createUI()  {
         self.backgroundColor = .white
         
-        let playButton = createButton(color: greenColor, x: 36, y: 36, title: "▶")
+        let playButton = createButton(color: greenColor, x: 36, y: 36, title: "▶", target: #selector(buttonClicked))
         self.addSubview(playButton)
 
-        let clearButton = createButton(color: orangeColor, x: 96, y: 36, title: "✖")
+        let clearButton = createButton(color: orangeColor, x: 96, y: 36, title: "✖", target: #selector(resetButtonTapped))
         self.addSubview(clearButton)
         
     }
     
     
-    func createButton(color: UIColor, x: Int, y: Int, title: String = "") -> UIButton {
+    func createButton(color: UIColor, x: Int, y: Int, title: String = "", target: Selector) -> UIButton {
         let button = UIButton(type: .system)
         button.frame = CGRect(x: x, y: y, width: 50, height: 50)
         button.backgroundColor = color
         button.layer.cornerRadius = 10
-        button.addTarget(self, action:#selector(buttonClicked), for: .touchUpInside)
+        button.addTarget(self, action:target, for: .touchUpInside)
         button.setTitle(title, for: .normal)
         button.setTitleColor(.black, for: .normal)
         return button
@@ -59,6 +59,10 @@ public class MusicView : UIView {
     public func buttonClicked(sender: UIButton!) {
         print("Button Clicked \(sender))")
 //        player?.start(note: 100)
+    }
+    
+    func resetButtonTapped(sender: UIButton!) {
+        drawingView.resetDrawing()
     }
     
     
