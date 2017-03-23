@@ -57,8 +57,7 @@ public class MusicView : UIView {
     
     
     public func buttonClicked(sender: UIButton!) {
-        print("Button Clicked \(sender))")
-//        player?.start(note: 100)
+        drawingView.printImage()
     }
     
     func resetButtonTapped(sender: UIButton!) {

@@ -95,6 +95,10 @@ class DrawView : UIView {
         mainImageView.image = nil
     }
     
+    public func printImage() {
+       _ = mainImageView.image?.pixelData()
+    }
+    
     
     
 }
