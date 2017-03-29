@@ -9,10 +9,20 @@ class DrawView : UIView {
     var brushWidth: CGFloat = 10.0
     var opacity: CGFloat = 1.0
     var swiped = false
+    public var duration = TimeInterval(10)
+    var playing = false
     
     // Main is for the drawing, and temp is for the current line
     let mainImageView = UIImageView(frame: CGRect(x: 0, y: 0, width: 490, height: 490))
     let tempImageView = UIImageView(frame: CGRect(x: 0, y: 0, width: 490, height: 490))
+    
+    //Line
+    let redLine = UIView(frame: CGRect(x: -5, y: 0, width: 5, height: 490))
+    
+    // Buttons
+    public var playButton : UIButton = UIButton(type: .roundedRect)
+    public var stopButton : UIButton = UIButton(type: .roundedRect)
+    
     
     // Basic init
     override init(frame: CGRect) {
@@ -20,8 +30,12 @@ class DrawView : UIView {
         
         self.isUserInteractionEnabled = true
         
+        redLine.backgroundColor = .red
+        
+        
         self.addSubview(tempImageView)
         self.addSubview(mainImageView)
+        self.addSubview(redLine)
     }
     
     // Not implemented
@@ -31,6 +45,10 @@ class DrawView : UIView {
     
     // Drawing code
     func drawLineFrom(fromPoint: CGPoint, toPoint: CGPoint) {
+        
+        if playing {
+            return
+        }
         
         UIGraphicsBeginImageContext(self.frame.size)
         let context = UIGraphicsGetCurrentContext()
@@ -91,13 +109,52 @@ class DrawView : UIView {
         tempImageView.image = nil
     }
     
+    // Resets the drawing view
     public func resetDrawing() {
         mainImageView.image = nil
     }
     
+    
+    
     public func printImage() {
-       _ = mainImageView.image?.pixelData()
+        let array = mainImageView.image?.pixelData()
+        if let player = SoundPlayer() {
+            
+            playButton.isUserInteractionEnabled = false
+            stopButton.isUserInteractionEnabled = false
+            playButton.alpha = 0.1
+            stopButton.alpha = 0.1
+            playing = true
+            
+            
+            // Reset the red line just in case
+            redLine.frame = CGRect(x: 0 - self.redLine.frame.width, y: 0, width: self.redLine.frame.width, height: self.frame.height)
+            
+            //Animate the red line
+            UIView.animate(withDuration: duration, delay: 0, options: .curveLinear, animations: {
+                self.redLine.frame = CGRect(x: self.frame.width, y: 0, width: self.redLine.frame.width, height: self.frame.height)
+            }, completion: { (success) in
+                 self.redLine.frame = CGRect(x: 0 - self.redLine.frame.width, y: 0, width: self.redLine.frame.width, height: self.frame.height)
+            })
+
+            // Play the music
+            player.playArrays(array!, time: duration , completion: { success in
+                if success {
+                    self.playButton.isUserInteractionEnabled = true
+                    self.stopButton.isUserInteractionEnabled = true
+                    self.playing = false
+                    self.playButton.alpha = 1.0
+                    self.stopButton.alpha = 1.0
+                }
+            })
+        }
     }
+    
+    
+    public func insertImage(image: UIImage) {
+        mainImageView.image = image
+    }
+    
     
     
     

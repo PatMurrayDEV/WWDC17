@@ -1,62 +1,97 @@
 import UIKit
 
+internal struct RotationOptions: OptionSet {
+    let rawValue: Int
+    
+    static let flipOnVerticalAxis = RotationOptions(rawValue: 1)
+    static let flipOnHorizontalAxis = RotationOptions(rawValue: 2)
+}
+
 public extension UIImage {
     
     // This outputs the image as an array of pixels
-    public func pixelData() -> [UInt8]? {
+    public func pixelData() -> [[UInt8]]? {
         
-        var pixelValues: [UInt8]?
 
         // Resize and rotate the image
-        // NOTE: For simplicity's sake, all numbers/sizes are hardcoded at this time
-        let newHeight = 122
-        UIGraphicsBeginImageContext(CGSize(width: newHeight, height: newHeight))
+        let resizedImage = self.resizeImage(newHeight: 50)
+        let rotatedImage = resizedImage.rotated(by: Measurement(value: 90, unit: .degrees), options: RotationOptions.flipOnHorizontalAxis)!
         
-        self.draw(in: CGRect(x: 61, y: 61,width: newHeight, height: newHeight))
-
+        // Get the size of the image to be used in calculatations below
+        let size = rotatedImage.size
+        let width = size.width
+        let height = size.height
         
-        let resizedImage = UIGraphicsGetImageFromCurrentImageContext()
-        UIGraphicsEndImageContext()
+        // Generate pixel array
+        let dataSize = width * height * 4
+        var pixelData = [UInt8](repeating: 0, count: Int(dataSize))
+        let colorSpace = CGColorSpaceCreateDeviceGray()
+        let context = CGContext(data: &pixelData,
+                                width: Int(width),
+                                height: Int(height),
+                                bitsPerComponent: 8,
+                                bytesPerRow: 4 * Int(width),
+                                space: colorSpace,
+                                bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue)
+        guard let cgImage = rotatedImage.cgImage else { return nil }
+        context?.draw(cgImage, in: CGRect(x: 0, y: 0, width: width, height: height))
         
         
-        if let imageRef = resizedImage?.cgImage {
-            let width = imageRef.width
-            let height = imageRef.height
-            let bitsPerComponent = imageRef.bitsPerComponent
-            print(bitsPerComponent)
-            let bytesPerRow = imageRef.bytesPerRow
-            print(bytesPerRow)
-            let totalBytes = height * bytesPerRow
-            print(totalBytes)
-            
-            let colorSpace = CGColorSpaceCreateDeviceGray()
-            var intensities = [UInt8](repeating: 0, count: totalBytes)
-            
-            let contextRef = CGContext(data: &intensities, width: width, height: height, bitsPerComponent: bitsPerComponent, bytesPerRow: bytesPerRow, space: colorSpace, bitmapInfo: 1)
-            
-            contextRef?.draw(imageRef, in: CGRect(x: 0.0, y: 0.0, width: CGFloat(width), height: CGFloat(height)))
-            
-            pixelValues = intensities
-            
-            var intensityArray: [[Int]] = Array(repeating: Array(repeating: 0, count: width), count: height)
-            
-            for index1 in 0...height-1{  //make sure height-1 is here always
-                for index2 in 0...width-1{  //(width-1) has to goes here because the last place in the array is the size-1
-                    let colorIndex = (index1 * width + index2)
-                    let value = pixelValues?[colorIndex]
-
-                    
-                    intensityArray[index1][index2] = Int(value!)
-                }
-            }
-            
-            print(intensityArray)
-            
+        // Clean pixels to just keep black pixels
+        let cleanedPixels = stride(from: 1, to: pixelData.count, by: 2).map {
+            pixelData[$0]
+        }
+        
+        // Separate pixels into rows (Array of arrays)
+        let chunkSize = 2 * Int(width) // this was 4
+        let chunks = stride(from: 0, to: cleanedPixels.count, by: chunkSize).map {
+            Array(cleanedPixels[$0..<min($0 + chunkSize, cleanedPixels.count)])
         }
         
         
-        return pixelValues
+
         
+        return chunks
+
+        
+    }
+    
+    
+    
+    func resizeImage(newHeight: CGFloat) -> UIImage {
+        let scale = newHeight / self.size.height
+        let newWidth = self.size.width * scale
+        UIGraphicsBeginImageContext(CGSize(width: newWidth, height: newHeight))
+        self.draw(in: CGRect(x: 0, y: 0, width: newWidth, height: newHeight))
+        let newImage = UIGraphicsGetImageFromCurrentImageContext()
+        UIGraphicsEndImageContext()
+        
+        return newImage!
+    }
+    
+    
+    
+    
+    internal func rotated(by rotationAngle: Measurement<UnitAngle>, options: RotationOptions = []) -> UIImage? {
+        guard let cgImage = self.cgImage else { return nil }
+        
+        let rotationInRadians = CGFloat(rotationAngle.converted(to: .radians).value)
+        let transform = CGAffineTransform(rotationAngle: rotationInRadians)
+        var rect = CGRect(origin: .zero, size: self.size).applying(transform)
+        rect.origin = .zero
+        
+        let renderer = UIGraphicsImageRenderer(size: rect.size)
+        return renderer.image { renderContext in
+            renderContext.cgContext.translateBy(x: rect.midX, y: rect.midY)
+            renderContext.cgContext.rotate(by: rotationInRadians)
+            
+            let x = options.contains(.flipOnVerticalAxis) ? -1.0 : 1.0
+            let y = options.contains(.flipOnHorizontalAxis) ? 1.0 : -1.0
+            renderContext.cgContext.scaleBy(x: CGFloat(x), y: CGFloat(y))
+            
+            let drawRect = CGRect(origin: CGPoint(x: -self.size.width/2, y: -self.size.height/2), size: self.size)
+            renderContext.cgContext.draw(cgImage, in: drawRect)
+        }
     }
     
     
