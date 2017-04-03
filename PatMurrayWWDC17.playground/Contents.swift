@@ -13,7 +13,6 @@ import PlaygroundSupport
  ------
  
  
- Create a view to pass to the Playground to render.
  */
 let mainView = UIView(frame: CGRect(x: 0, y: 0, width: 490, height: 490))
 PlaygroundPage.current.liveView = mainView
@@ -25,20 +24,23 @@ PlaygroundPage.current.needsIndefiniteExecution = true
 let duration = 10
 
 /*: 
- Create the MusicView and add it to our rendered view!
  
  `GuidesAlpha` is how much you want to see the pixel to note mapping that is occuring behind the scenes. I think it's fun to try it off first, then to turn it up once your art gets more advanced.
  */
-let musicView = MusicView(duration: duration, guidesAlpha: 0.0)
+let guidesAlpha : CGFloat = 0.0
+
+
+let musicView = MusicView(duration: duration, guidesAlpha: guidesAlpha)
 mainView.addSubview(musicView)
 
 /*:
+ ### Image Preload
  Un-comment out whichever image you wish to preload with
  
  */
 musicView.insetDrawing(image: #imageLiteral(resourceName: "help.png")) // Help
 //musicView.insetDrawing(image: #imageLiteral(resourceName: "bridge.png")) // Sydney Harbour Bidge
-//musicView.insetDrawing(image: #imageLiteral(resourceName: "trex.png")) // T-Rex
+//musicView.insetDrawing(image: #imageLiteral(resourceName: "trex.png")) // T-Rex (this sounds half decent)
 
 
 
